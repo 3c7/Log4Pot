@@ -14,6 +14,7 @@ from uuid import uuid4
 
 from expression_parser import parse
 from payloader import process_payloads
+from website import content
 
 try:
     from azure.storage.blob import BlobServiceClient
@@ -91,9 +92,13 @@ class Log4PotHTTPRequestHandler(BaseHTTPRequestHandler):
             self.version_string = lambda: self.server.server_header
         self.uuid = uuid4()
         self.send_response(200)
-        self.send_header("Content-Type", "text/json")
+        self.send_header("Content-Type", "text/html")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("X-XSS-Protection", "1")
+        self.send_header("Content-Length", str(len(content)))
         self.end_headers()
-        self.wfile.write(bytes(f'{{ "status": "ok", "id": "{self.uuid}" }}', "utf-8"))
+        self.wfile.write(content)
 
         self.logger = self.server.logger
         self.logger.log_request(self.server.server_address[1], *self.client_address, self.requestline, self.headers,
